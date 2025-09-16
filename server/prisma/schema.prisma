@@ -1,0 +1,69 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// User model linked to our authentication provider
+model User {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique // The ID from Clerk.sh
+  email     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  snippets  Snippet[]
+}
+
+// The core Snippet model
+model Snippet {
+  id          String   @id @default(cuid())
+  title       String
+  code        String   @db.Text
+  language    String
+  sourceUrl   String?  // The original URL where the snippet was found
+  notes       String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  
+  context     Context? // One-to-one relation with its context
+  tags        SnippetTag[]
+
+  @@index([userId])
+}
+
+// Stores the rich context scraped from the source URL
+model Context {
+  id            String   @id @default(cuid())
+  pageTitle     String?
+  scrapedContent String?   @db.Text // The relevant text content from the page
+  metadata      Json?    // For structured data, e.g., { "so_score": 125, "author": "..." }
+  createdAt     DateTime @default(now())
+
+  snippetId     String   @unique
+  snippet       Snippet  @relation(fields: [snippetId], references: [id])
+}
+
+// Many-to-many relationship for tagging snippets
+model Tag {
+  id          String @id @default(cuid())
+  name        String @unique
+  
+  snippets    SnippetTag[]
+}
+
+model SnippetTag {
+  snippetId   String
+  tagId       String
+
+  snippet     Snippet @relation(fields: [snippetId], references: [id])
+  tag         Tag     @relation(fields: [tagId], references: [id])
+
+  @@id([snippetId, tagId])
+}
