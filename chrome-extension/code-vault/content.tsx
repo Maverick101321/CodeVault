@@ -1,6 +1,13 @@
+import { sendToBackground } from "@plasmohq/messaging"
 import cssText from "data-text:~style.css"
 import type { PlasmoCSConfig, PlasmoGetStyle } from "plasmo"
 import { useEffect, useState } from "react"
+
+type RequestBody = {
+  code: string
+  sourceUrl: string
+  title: string
+}
 
 export const config: PlasmoCSConfig = {
   matches: ["<all_urls>"]
@@ -27,10 +34,17 @@ const ContentScriptUI = () => {
     }
   }, [])
 
-  const handleSave = () => {
-    console.log("Selected Text:", selectedText)
-    console.log("Page URL:", window.location.href)
-    // Future logic to send this data to your backend will go here.
+  const handleSave = async () => {
+    const body: RequestBody = {
+      code: selectedText,
+      sourceUrl: window.location.href,
+      title: document.title
+    }
+    await sendToBackground({
+      name: "saveSnippet",
+      body
+    })
+    setSelectedText("") // Hide button after sending
   }
 
   if (!selectedText) {
