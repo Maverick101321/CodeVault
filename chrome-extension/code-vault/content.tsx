@@ -40,7 +40,7 @@ const ContentScriptUI = () => {
       sourceUrl: window.location.href,
       title: document.title
     }
-    await sendToBackground({
+    await (sendToBackground as any)({
       name: "saveSnippet",
       body
     })
