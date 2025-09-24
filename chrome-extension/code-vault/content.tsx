@@ -7,6 +7,7 @@ type RequestBody = {
   code: string
   sourceUrl: string
   title: string
+  language: string
 }
 
 export const config: PlasmoCSConfig = {
@@ -38,7 +39,8 @@ const ContentScriptUI = () => {
     const body: RequestBody = {
       code: selectedText,
       sourceUrl: window.location.href,
-      title: document.title
+      title: document.title,
+      language: "plaintext"
     }
     await (sendToBackground as any)({
       name: "saveSnippet",

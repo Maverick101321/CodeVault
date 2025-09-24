@@ -4,13 +4,14 @@ type RequestBody = {
   code: string
   sourceUrl: string
   title: string
+  language: string
 }
 
 const handler: PlasmoMessaging.MessageHandler<RequestBody, void> = async (req, res) => {
   console.log("Background script received 'saveSnippet' message with payload:", req.body)
 
   try {
-    const response = await fetch("http://localhost:3000/snippets", {
+    const response = await fetch("http://localhost:3000/api/v1/snippets", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
