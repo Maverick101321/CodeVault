@@ -7,13 +7,14 @@ import { UpdateSnippetDto } from './dto/update-snippet.dto';
 export class SnippetsService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createSnippetDto: CreateSnippetDto) {
+  async create(createSnippetDto: CreateSnippetDto, userId: string) {
     const { tags, context, ...snippetData } = createSnippetDto;
 
     return this.prisma.$transaction(async (prisma) => {
       const snippet = await prisma.snippet.create({
         data: {
           ...snippetData,
+          userId,
           context: {
             create: context,
           },

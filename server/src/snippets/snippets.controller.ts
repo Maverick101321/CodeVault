@@ -10,16 +10,17 @@ import {
 import { SnippetsService } from './snippets.service';
 import { CreateSnippetDto } from './dto/create-snippet.dto';
 import { UpdateSnippetDto } from './dto/update-snippet.dto';
-import { Public } from '../snippets/public.decorator';
+import { FirebaseGuard } from '../auth/firebase.guard';
+import { Req, UseGuards } from '@nestjs/common';
 
 @Controller('snippets')
 export class SnippetsController {
   constructor(private readonly snippetsService: SnippetsService) {}
 
-  @Public()
   @Post()
-  create(@Body() createSnippetDto: CreateSnippetDto) {
-    return this.snippetsService.create(createSnippetDto);
+  @UseGuards(FirebaseGuard)
+  create(@Body() createSnippetDto: CreateSnippetDto, @Req() req) {
+    return this.snippetsService.create(createSnippetDto, req.user.id);
   }
 
   @Get()
