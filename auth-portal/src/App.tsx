@@ -1,35 +1,41 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect } from "react";
+import { auth } from "./firebase";
+import * as firebaseui from "firebaseui";
+import "firebaseui/dist/firebaseui.css";
+import { GoogleAuthProvider, EmailAuthProvider } from "firebase/auth";
+import type { UserCredential } from "firebase/auth";
 
-function App() {
-  const [count, setCount] = useState(0)
+const App = () => {
+  useEffect(() => {
+    const ui =
+      firebaseui.auth.AuthUI.getInstance() || new firebaseui.auth.AuthUI(auth);
+    const uiConfig = {
+      signInOptions: [
+        GoogleAuthProvider.PROVIDER_ID,
+        EmailAuthProvider.PROVIDER_ID,
+      ],
+      signInSuccessUrl: "/",
+      callbacks: {
+        signInSuccessWithAuthResult: (authResult: UserCredential) => {
+          console.log("Successfully signed in with auth result:", authResult);
+          authResult.user.getIdToken().then((idToken) => {
+            const extensionId = "hlbngceeiifhipcmdfdhcnbljdbppkcb";
+            chrome.runtime.sendMessage(extensionId, { token: idToken });
+          });
+          // Return false to prevent redirect
+          return false;
+        },
+      },
+    };
+    ui.start("#firebaseui-auth-container", uiConfig);
+  }, []);
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    <div>
+      <h1>Welcome to the Auth Portal</h1>
+      <div id="firebaseui-auth-container"></div>
+    </div>
+  );
+};
 
-export default App
+export default App;
