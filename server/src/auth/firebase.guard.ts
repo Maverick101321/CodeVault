@@ -1,6 +1,16 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { Request } from 'express';
 import { FirebaseAdminService } from '../firebase-admin/firebase-admin.service';
 import { PrismaService } from '../prisma/prisma.service';
+
+interface RequestWithUser extends Request {
+  user: any;
+}
 
 @Injectable()
 export class FirebaseGuard implements CanActivate {
@@ -10,11 +20,14 @@ export class FirebaseGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+    const request = context.switchToHttp().getRequest() as RequestWithUser;
     const authHeader = request.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedException('Missing or invalid authorization header');
+      throw new UnauthorizedException(
+        'Missing or invalid authorization header',
+      );
     }
 
     const idToken = authHeader.split(' ')[1];
@@ -33,14 +46,14 @@ export class FirebaseGuard implements CanActivate {
         user = await this.prisma.user.create({
           data: {
             clerkId: uid,
-            email: email,
+            email: email ?? '',
           },
         });
       }
 
       request.user = user;
       return true;
-    } catch (error) {
+    } catch {
       throw new UnauthorizedException('Invalid Firebase ID token');
     }
   }
