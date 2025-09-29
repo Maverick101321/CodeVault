@@ -6,6 +6,6 @@ import { FirebaseGuard } from './firebase.guard';
 @Module({
   imports: [FirebaseAdminModule, PrismaModule],
   providers: [FirebaseGuard],
-  exports: [FirebaseGuard],
+  exports: [FirebaseGuard, FirebaseAdminModule],
 })
 export class AuthModule {}
