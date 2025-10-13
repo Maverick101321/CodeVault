@@ -1,4 +1,6 @@
 import type { PlasmoMessaging } from "@plasmohq/messaging"
+// 1. Import Plasmo's built-in Storage helper
+import { Storage } from "@plasmohq/storage"
 
 type RequestBody = {
   code: string
@@ -11,16 +13,29 @@ const handler: PlasmoMessaging.MessageHandler<RequestBody, void> = async (req, r
   console.log("Background script received 'saveSnippet' message with payload:", req.body)
 
   try {
-    const response = await fetch("http://localhost:3000/api/v1/snippets", {
+    // 2. Create an instance of the Plasmo Storage class
+    const storage = new Storage()
+
+    // 3. Use the Plasmo storage.get() method to retrieve the token
+    const token = await storage.get("firebaseIdToken")
+
+    // 4. Check if the token exists. If not, the user is not logged in.
+    if (!token) {
+      throw new Error("Authentication error: User is not logged in.")
+    }
+
+    const response = await fetch("http://localhost:3000/snippets", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
       },
       body: JSON.stringify(req.body)
     })
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      const errorBody = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}, body: ${errorBody}`)
     }
 
     const result = await response.json()

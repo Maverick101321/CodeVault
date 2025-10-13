@@ -27,6 +27,11 @@
   "manifest": {
     "host_permissions": [
       "https://*/*"
-    ]
+    ],
+    "externally_connectable": {
+      "matches": [
+        "http://localhost:5173/*"
+      ]
+    }
   }
 }

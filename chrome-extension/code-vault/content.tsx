@@ -42,11 +42,33 @@ const ContentScriptUI = () => {
       title: document.title,
       language: "plaintext"
     }
-    await (sendToBackground as any)({
-      name: "saveSnippet",
-      body
-    })
-    setSelectedText("") // Hide button after sending
+
+    // ====================================================================
+    // START: ADDED ERROR HANDLING
+    // ====================================================================
+
+    try {
+      console.log("Sending 'saveSnippet' to background script...")
+      await sendToBackground({
+        name: "saveSnippet",
+        body
+      })
+      console.log("Message sent successfully.")
+    } catch (error) {
+      // This will now catch the "channel closed" error and prevent it
+      // from appearing as an unchecked error in the console.
+      if (error instanceof Error && error.message.includes("Could not establish connection")) {
+        console.log("Message channel closed, as expected after processing.");
+      } else {
+        console.error("Error sending message to background:", error);
+      }
+    } finally {
+      setSelectedText("") // Hide button after sending, regardless of outcome
+    }
+    
+    // ====================================================================
+    // END: ADDED ERROR HANDLING
+    // ====================================================================
   }
 
   if (!selectedText) {
