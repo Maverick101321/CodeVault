@@ -23,6 +23,44 @@ const App = () => {
   };
 
   useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        console.log("User detected, syncing with extension...");
+        user.getIdToken().then((idToken) => {
+          const extensionId = "hlbngceeiifhipcmdfdhcnbljdbppkcb";
+          if (window.chrome && chrome.runtime && chrome.runtime.sendMessage) {
+            chrome.runtime.sendMessage(extensionId, { token: idToken }, (response) => {
+              if (chrome.runtime.lastError) {
+                console.warn("Could not send to extension:", chrome.runtime.lastError);
+              } else {
+                console.log("Token sent to extension successfully");
+              }
+            });
+          }
+        });
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleManualSync = () => {
+    if (auth.currentUser) {
+      auth.currentUser.getIdToken().then((idToken) => {
+        const extensionId = "hlbngceeiifhipcmdfdhcnbljdbppkcb";
+        if (window.chrome && chrome.runtime && chrome.runtime.sendMessage) {
+          chrome.runtime.sendMessage(extensionId, { token: idToken }, (response) => {
+            alert("Sync signal sent to extension!");
+          });
+        } else {
+          alert("Chrome extension API not available. Are you running this in Chrome?");
+        }
+      });
+    } else {
+      alert("You are not signed in.");
+    }
+  };
+
+  useEffect(() => {
     const ui =
       firebaseui.auth.AuthUI.getInstance() || new firebaseui.auth.AuthUI(auth);
     const uiConfig = {
@@ -36,7 +74,9 @@ const App = () => {
           console.log("Successfully signed in with auth result:", authResult);
           authResult.user.getIdToken().then((idToken) => {
             const extensionId = "hlbngceeiifhipcmdfdhcnbljdbppkcb";
-            chrome.runtime.sendMessage(extensionId, { token: idToken });
+            if (window.chrome && chrome.runtime && chrome.runtime.sendMessage) {
+              chrome.runtime.sendMessage(extensionId, { token: idToken });
+            }
           });
           // Return false to prevent redirect
           return false;
@@ -71,6 +111,12 @@ const App = () => {
       <h1>CodeVault</h1>
       <div className="auth-container">
         <div id="firebaseui-auth-container"></div>
+      </div>
+
+      <div style={{ marginTop: "20px" }}>
+        <button onClick={handleManualSync} style={{ fontSize: "0.9rem", padding: "8px 16px" }}>
+          Sync with Extension
+        </button>
       </div>
     </div>
   );

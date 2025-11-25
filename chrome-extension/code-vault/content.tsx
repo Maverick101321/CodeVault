@@ -22,11 +22,15 @@ export const getStyle: PlasmoGetStyle = () => {
 
 const ContentScriptUI = () => {
   const [selectedText, setSelectedText] = useState("")
+  const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle")
 
   useEffect(() => {
     const handleMouseUp = () => {
       const text = window.getSelection().toString().trim()
-      setSelectedText(text)
+      if (text) {
+        setSelectedText(text)
+        setStatus("idle")
+      }
     }
 
     document.addEventListener("mouseup", handleMouseUp)
@@ -36,6 +40,7 @@ const ContentScriptUI = () => {
   }, [])
 
   const handleSave = async () => {
+    setStatus("saving")
     const body: RequestBody = {
       code: selectedText,
       sourceUrl: window.location.href,
@@ -43,32 +48,23 @@ const ContentScriptUI = () => {
       language: "plaintext"
     }
 
-    // ====================================================================
-    // START: ADDED ERROR HANDLING
-    // ====================================================================
-
     try {
-      console.log("Sending 'saveSnippet' to background script...")
       await sendToBackground({
         name: "saveSnippet",
         body
       })
-      console.log("Message sent successfully.")
+      setStatus("saved")
+      setTimeout(() => {
+        setSelectedText("")
+        setStatus("idle")
+      }, 2000)
     } catch (error) {
-      // This will now catch the "channel closed" error and prevent it
-      // from appearing as an unchecked error in the console.
-      if (error instanceof Error && error.message.includes("Could not establish connection")) {
-        console.log("Message channel closed, as expected after processing.");
-      } else {
-        console.error("Error sending message to background:", error);
-      }
-    } finally {
-      setSelectedText("") // Hide button after sending, regardless of outcome
+      console.error("Error sending message to background:", error)
+      setStatus("error")
+      setTimeout(() => {
+        setStatus("idle")
+      }, 3000)
     }
-    
-    // ====================================================================
-    // END: ADDED ERROR HANDLING
-    // ====================================================================
   }
 
   if (!selectedText) {
@@ -77,7 +73,20 @@ const ContentScriptUI = () => {
 
   return (
     <div className="save-to-vault-container">
-      <button onClick={handleSave}>Save to Vault</button>
+      <button
+        onClick={handleSave}
+        disabled={status === "saving" || status === "saved"}
+        style={{
+          backgroundColor: status === "error" ? "#ff4444" : status === "saved" ? "#4CAF50" : undefined,
+          color: "white",
+          cursor: status === "saving" ? "wait" : "pointer"
+        }}
+      >
+        {status === "idle" && "Save to Vault"}
+        {status === "saving" && "Saving..."}
+        {status === "saved" && "Saved to Vault"}
+        {status === "error" && "Error"}
+      </button>
     </div>
   )
 }
